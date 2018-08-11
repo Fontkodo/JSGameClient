@@ -39,7 +39,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
     function onOpen(evt)
     {
 	sendUserAction("connect");
-	setInterval(display,20);
+	setInterval(display,35);
     }
 
     function setMillisecondAdjustment(remoteMillis){
@@ -77,13 +77,18 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
     }();
 
     function display(){
+
+	if(!gameState){
+	    return
+	}
+
+	var currentMillis = (new Date()).getTime();
 	var ctx = canvas.getContext("2d");
+
 	ctx.fillStyle = "black";
 	ctx.fillRect(0,0,1400,800);
 
-	var currentMillis = (new Date()).getTime();
-
-	if(gameState && gameState.Sounds){
+	if(gameState.Sounds){
 	    var sounds = gameState.Sounds;
 	    for(i=0; i<sounds.length; i++){
 		if(previousAudio){
@@ -96,7 +101,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	    }
 	}
 
-	if(gameState && gameState.SpaceObjects){
+	if(gameState.SpaceObjects){
 	    var sos = gameState.SpaceObjects
 	    for(i=0; i<sos.length; i++){
 		var so = sos[i];
@@ -125,7 +130,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	}
 
 	var player = null;
-	if(gameState && gameState.SpaceObjects){
+	if(gameState.SpaceObjects){
 	    var sos = gameState.SpaceObjects;
 	    for(i=0; i<sos.length; i++){
 		var so = sos[i];
@@ -136,7 +141,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	    }
 	}
 
-	if(gameState && gameState.SpaceObjects){
+	if(gameState.SpaceObjects){
 	    var sos = gameState.SpaceObjects;
 	    var msg = "";
 	    for(i=0; i<sos.length; i++){
@@ -168,14 +173,13 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 		ctx.fillText(label, 120 - width, y);
 		ctx.fillText(value, 125, y);
 	    }
-
 	} else {
-	    var msg = "Player Deceased - reload page to restart";
-	    ctx.font = "42px Arial";
-	    ctx.fillStyle = "yellow";
-	    var width = ctx.measureText(msg).width;
-	    ctx.fillText(msg, 700 - (width/2), 380);
-	    //websocket = null;
+	    var msg = "Player Deceased"
+            ctx.font = "42px Arial";
+            ctx.fillStyle = "yellow";
+            var width = ctx.measureText(msg).width;
+            ctx.fillText(msg, 700 - (width/2), 380);
+	    setTimeout(function(){ document.location="/"; },3000);
 	}
     }
 
