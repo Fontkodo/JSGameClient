@@ -12,7 +12,9 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
     var displayCount		= 0;
     var messageCount		= 0;
     var millisecondAdjustment	= 0;
-    var previousAudio           = null;
+    var messageText             = "Up/Down Arrows for thrust, Right/Left to turn, SPACE to fire, S toggle Sound";
+    var soundEnabled            = true;
+    var lastDisplayTime         = 0;
 
     if(!userid){
 	throw("no user id supplied");
@@ -39,7 +41,8 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
     function onOpen(evt)
     {
 	sendUserAction("connect");
-	setInterval(display,35);
+	//setInterval(display,35);
+	displayTimeoutCallback();
     }
 
     function setMillisecondAdjustment(remoteMillis){
@@ -64,17 +67,29 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	};
     }();
 
-    var fetchSound = function(){
+    var playSound = function(){
 	cache = {};
 	return function(name){
+	    if(!soundEnabled){
+		return;
+	    }
+	    name = name.replace(/.wav$/,'.mp3');
 	    var sound = cache[name];
 	    if(!sound){
-		sound = new Howl({ src: [name]});
+		sound = new Audio(name);
 		cache[name] = sound;
 	    }
-	    return sound;
+	    setTimeout(function(){
+		sound.currentTime = 0;
+		sound.play();
+	    },1);
 	};
     }();
+
+    function displayTimeoutCallback(){
+	display();
+	setTimeout(displayTimeoutCallback,35);
+    }
 
     function display(){
 
@@ -83,22 +98,18 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	}
 
 	var currentMillis = (new Date()).getTime();
+	if(currentMillis - lastDisplayTime < 20){
+	    return;
+	}
+	lastDisplayTime = currentMillis;
 	var ctx = canvas.getContext("2d");
 
 	ctx.fillStyle = "black";
 	ctx.fillRect(0,0,1400,800);
 
-	if(gameState.Sounds){
-	    var sounds = gameState.Sounds;
-	    for(i=0; i<sounds.length; i++){
-		if(previousAudio){
-		    previousAudio.stop();
-		    previousAudio.currentTime = 0;
-		}
-		previousAudio = fetchSound(sounds[i]);
-		previousAudio.play();
-		break;
-	    }
+	// Play only the first requested sound
+	if(gameState.Sounds && gameState.Sounds.length){
+	    playSound(gameState.Sounds[0]);
 	}
 
 	if(gameState.SpaceObjects){
@@ -107,7 +118,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 		var so = sos[i];
 		var loc = so.loc;
 		var vel = so.vel;
-		var elapsed = currentMillis - so.timestamp + millisecondAdjustment;
+		var elapsed = currentMillis - so.timestamp - millisecondAdjustment;
 		var x = loc.x + (elapsed * vel.x);
 		var y = loc.y + (elapsed * vel.y);
 		var radians = -((elapsed * so.rotvel) + so.currentRotation);
@@ -150,9 +161,11 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 		    msg = msg + (so.userid + ":" + so.score + "/" + so.highScore + "    ");
 		}
 	    }
-	    ctx.fillStyle = "white";
-	    ctx.font = "14px Arial";
-	    ctx.fillText(msg, 10, 780);
+	    if(msg){
+		ctx.fillStyle = "white";
+		ctx.font = "14px Arial";
+		ctx.fillText(msg, 10, 780);
+	    }
 	}
 
 	if(player){
@@ -181,6 +194,13 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
             ctx.fillText(msg, 700 - (width/2), 380);
 	    setTimeout(function(){ document.location="/"; },3000);
 	}
+	
+	if(messageText) {
+	    ctx.fillStyle = "yellow";
+	    ctx.font = "24px Arial";
+	    ctx.fillText(messageText, 700-ctx.measureText(messageText).width/2, 50);
+	}
+
     }
 
     var netStringCollector = "";
@@ -290,6 +310,12 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	    sendUserAction(action);
 	    e.preventDefault();
 	}
+	messageText = '';
+	if(e.code == "KeyS"){
+	    soundEnabled = !soundEnabled;
+	    messageText = soundEnabled ? "Sound Enabled" : "Sound Disabled";
+	}
     });
 
 }
+

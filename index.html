@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Blasteroids</title>
+<link rel="stylesheet" href="normalize.css"/>
+<link rel="stylesheet" href="skeleton.css"/>
+<link href='//fonts.googleapis.com/css?family=Raleway:400,300,600'
+      rel='stylesheet' type='text/css'>
+<script language="javascript" type="text/javascript" src="blasteroids.js"></script>
+<script>
+    function launch(){
+	var userid = prompt("Player ID");
+	if(!userid){
+	    return;
+	}
+	document.body.classList.add('dark-background');
+	document.getElementById("main").style.display = 'none';
+	blasteroids({
+	    userid: userid,
+	    wsUri: "ws://" + document.location.hostname + ":6080/blasteroids",
+	    waitReady : false,
+	    canvas: document.getElementById("canvas") });
+    }
+</script>
+<style>
+.dark-background { background-color: #333 }
+#main { margin : 60px }
+ul { display: table; }
+ul > li { display: table-row; }
+ul > li::before {
+    display: table-cell;
+    text-align: right;
+}
+</style>
+</head>
+<body>
+  <div id="main">
+    <div class="container">
+      <h2><span style="font-size:135%">Blasteroids</span></br>2018 Summer Java Project</h2>
+      <hr/>
+      <div class="row">
+	<div class="seven columns">
+	  <p>To better learn Java during my freshman <a href="http://www.ncf.edu/">New College</a>
+	    summer vacation, I implemented a classic Asteroids game in three steps.</p>
+	  <ul>
+	    <li>Single-user local version using JavaFX</li>
+	    <li>Multi-user version with separate client also in JavaFX</li>
+	    <li>Multi-user version with JavaScript front-end on this website</li>
+	  </ul>
+	  <p style="font-size:88%;font-style:italic">- by
+	    <a href="http://fontkodo.github.io/">Alex Griffin</a></p>
+	</div>
+	<div class="five columns">
+	  <a onclick="launch()">
+	    <img style="margin-top:10px" src="sample.png" width="140"/>
+	  </br><span style="font-size:80%">Join game here!</span></a></br>
+
+	</div>
+      </div>
+      <hr/>
+      <div class="row">
+	<div class="seven columns">
+	  <h5>Tech Stack</h5>
+	  <ul>
+	    <li>Java Threads</li>
+	    <li>Java Networking</li>
+	    <li><a href="https://docs.oracle.com/javase/8/javafx/api/">JavaFX</a></li>
+	    <li><a href="https://junit.org/junit5/">JUnit</a></li>
+	    <li><a href="https://docs.travis-ci.com/">Travis Continuous Integration</a></li>
+	    <li><a href="http://json.org/">JSON</a></li>
+	    <li><a href="https://en.wikipedia.org/wiki/Netstring">Netstring</a></li>
+	    <li><a href="http://websocket.org/">Websockets</a></li>
+	    <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API">JavaScript Canvas 2D</a></li>
+	  </ul>
+	</div>
+	<div class="five columns">
+	  <h5>GitHub Repositories</h5>
+	  <ul>
+	    <li><a href="https://github.com/Fontkodo/GameServer">Java server</a></li>
+	    <li><a href="https://github.com/Fontkodo/Client">JavaFX client</a></li>
+	    <li><a href="https://github.com/Fontkodo/JSGameClient">JavaScript client</a></li>
+	    <li><a href="https://github.com/Fontkodo/NetString">Java Netstring</a>
+	      <a href="https://travis-ci.org/Fontkodo/NetString">
+		<img style="width:60px;padding-left:10px;position:relative;top:2px"
+		     src="https://api.travis-ci.org/Fontkodo/NetString.svg?branch=master"/></a></li>
+	  </ul>
+	</div>
+      </div>
+    </div>
+  </div>
+  <canvas id="canvas" width=10 height=10/>
+</body>
+</html>
