@@ -1,6 +1,9 @@
 
 
+
 function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
+    
+    "use strict";
 
     var wsUri	  = config.wsUri; //"ws://10.0.0.169:6080/blasteroids";
     var canvas	  = config.canvas;
@@ -9,7 +12,6 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 
     var websocket		= null;
     var gameState		= null;
-    var displayCount		= 0;
     var messageCount		= 0;
     var millisecondAdjustment	= 0;
     var messageText             = "Up/Down Arrows for thrust, Right/Left to turn, SPACE to fire, S toggle Sound";
@@ -23,7 +25,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	throw("bad user id supplied");
     }
     if(!(wsUri && wsUri.match(/^wss?:.*/))){
-	throw("bad wsURI " + wsURI);
+	throw("bad wsUri " + wsUri);
     }
 
     function sendUserAction(action){
@@ -55,11 +57,11 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
     }
 
     var fetchImg = function(){
-	cache = {};
+	var cache = {};
 	return function(imgName){
 	    var img = cache[imgName];
 	    if(!img){
-		img = new Image()
+		img = new Image();
 		img.src = imgName;
 		cache[imgName] = img;
 	    }
@@ -68,7 +70,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
     }();
 
     var playSound = function(){
-	cache = {};
+	var cache = {};
 	return function(name){
 	    if(!soundEnabled){
 		return;
@@ -93,16 +95,20 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 
     function display(){
 
-	if(!gameState){
-	    return
-	}
+	var stats,i,sos,so,msg,loc,vel,elapsed,x,y,radians,img,scale;
+	var label,value,measure,width;
 
 	var currentMillis = (new Date()).getTime();
+	var ctx = canvas.getContext("2d");
+
+	if(!gameState){
+	    return;
+	}
+
 	if(currentMillis - lastDisplayTime < 20){
 	    return;
 	}
 	lastDisplayTime = currentMillis;
-	var ctx = canvas.getContext("2d");
 
 	ctx.fillStyle = "black";
 	ctx.fillRect(0,0,1400,800);
@@ -113,17 +119,17 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	}
 
 	if(gameState.SpaceObjects){
-	    var sos = gameState.SpaceObjects
+	    sos = gameState.SpaceObjects;
 	    for(i=0; i<sos.length; i++){
-		var so = sos[i];
-		var loc = so.loc;
-		var vel = so.vel;
-		var elapsed = currentMillis - so.timestamp - millisecondAdjustment;
-		var x = loc.x + (elapsed * vel.x);
-		var y = loc.y + (elapsed * vel.y);
-		var radians = -((elapsed * so.rotvel) + so.currentRotation);
-		var img = fetchImg(so.imgURL);
-		var scale = so.scale;
+		so = sos[i];
+		loc = so.loc;
+		vel = so.vel;
+		elapsed = currentMillis - so.timestamp - millisecondAdjustment;
+		x = loc.x + (elapsed * vel.x);
+		y = loc.y + (elapsed * vel.y);
+		radians = -((elapsed * so.rotvel) + so.currentRotation);
+		img = fetchImg(so.imgURL);
+		scale = so.scale;
 		ctx.save();
 		ctx.translate(x,y);
 		ctx.rotate(radians);
@@ -142,9 +148,9 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 
 	var player = null;
 	if(gameState.SpaceObjects){
-	    var sos = gameState.SpaceObjects;
+	    sos = gameState.SpaceObjects;
 	    for(i=0; i<sos.length; i++){
-		var so = sos[i];
+		so = sos[i];
 		if(so.userid == userid){
 		    player = so;
 		    break;
@@ -153,10 +159,10 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	}
 
 	if(gameState.SpaceObjects){
-	    var sos = gameState.SpaceObjects;
-	    var msg = "";
+	    sos = gameState.SpaceObjects;
+	    msg = "";
 	    for(i=0; i<sos.length; i++){
-		var so = sos[i];
+		so = sos[i];
 		if(so.score){
 		    msg = msg + (so.userid + ":" + so.score + "/" + so.highScore + "    ");
 		}
@@ -171,26 +177,26 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	if(player){
 	    ctx.fillStyle = "white";
 	    ctx.font = "14px Arial";
-	    var stats = [ { label: 'Score', value : player.score },
-			  { label: 'Photons', value: player.photonCount },
-			  { label: 'Fuel',  value: player.fuel.toFixed(1) },
-			  { label: 'Shield Level', value: player.shieldLevel },
-			  { label: 'High Score', value: player.highScore }];
+	    stats = [ { label: 'Score', value : player.score },
+		      { label: 'Photons', value: player.photonCount },
+		      { label: 'Fuel',  value: player.fuel.toFixed(1) },
+		      { label: 'Shield Level', value: player.shieldLevel },
+		      { label: 'High Score', value: player.highScore }];
 
 	    for(i=0; i<stats.length; i++){
-		var label = stats[i].label + ":";
-		var value = "" + stats[i].value;
-		var measure = ctx.measureText(label);
-		var width = measure.width;
-		var y = 15 * (i+1);
+		label = stats[i].label + ":";
+		value = "" + stats[i].value;
+		measure = ctx.measureText(label);
+		width = measure.width;
+		y = 15 * (i+1);
 		ctx.fillText(label, 120 - width, y);
 		ctx.fillText(value, 125, y);
 	    }
 	} else {
-	    var msg = "Player Deceased"
+	    msg = "Player Deceased";
             ctx.font = "42px Arial";
             ctx.fillStyle = "yellow";
-            var width = ctx.measureText(msg).width;
+            width = ctx.measureText(msg).width;
             ctx.fillText(msg, 700 - (width/2), 380);
 	    setTimeout(function(){ document.location="/"; },3000);
 	}
@@ -208,7 +214,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
     function onMessage(evt)
     {
 	if (!evt.data){
-	    return
+	    return;
 	}
 
 	netStringCollector = netStringCollector + evt.data;
@@ -216,16 +222,16 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	// If it does not match netstring, try to find beginning of next
 	// netstring.
 	if (!netStringCollector.match(/^[0-9]+:/)){
-	    console.log("unexpected input: " + netStringCollector.substr(0,30) + "...")
+	    console.log("unexpected input: " + netStringCollector.substr(0,30) + "...");
 	    netStringCollector = netStringCollector.replace(/^.*,([0-9]+:.*)/,'\$1');
 	    console.log("skipping");
-	    return
+	    return;
 	}
 
 	while (netStringCollector.length > 0){
 	    
 	    var size = parseInt(netStringCollector);
-	    var requiredSize = (size + "").length + size + (":,".length)
+	    var requiredSize = (size + "").length + size + (":,".length);
 	    if (requiredSize > netStringCollector.length){
 		break;
 	    }
@@ -281,7 +287,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	    document.documentElement.offsetHeight,
 	    document.documentElement.clientHeight);
 
-	var scaling = Math.min((w-20) / 1400, (h-20) / 800)
+	var scaling = Math.min((w-20) / 1400, (h-20) / 800);
 
 	canvas.width = scaling * 1400;
 	canvas.height = scaling * 800;
