@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <script src="blasteroids.js"></script>
+  </head>
+  <body>
+    <p>Press the 
+      <button id="GO" onclick="GO()">GO</button>
+      button to launch as TEST-USER.</p>
+    <canvas id="canvas" width="10" height="10"></canvas>
+  </body>
+
+  <script>
+    
+    function GO(){
+	var userid = "TEST-USER";
+	blasteroids({
+	    userid: userid,
+	    wsUri: "ws://blasteroids.net:6080/blasteroids",
+	    waitReady : false,
+	    canvas: document.getElementById("canvas") });
+    }
+
+  </script>
+</html>

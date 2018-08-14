@@ -109,9 +109,6 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 
     function display(){
 
-	var stats,i,sos,so,msg,loc,vel,elapsed,x,y,radians,img,scale;
-	var label,value,measure,width;
-
 	var currentMillis = (new Date()).getTime();
 	var ctx = canvas.getContext("2d");
 
@@ -132,85 +129,62 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	    playSound(gameState.Sounds[0]);
 	}
 
-	    gameState.SpaceObjects.forEach( so => {
-		const so = sos[i];
-		const loc = so.loc;
-		const vel = so.vel;
-		const elapsed = currentMillis - so.timestamp - millisecondAdjustment;
-		const x = loc.x + (elapsed * vel.x);
-		const y = loc.y + (elapsed * vel.y);
-		const radians = -((elapsed * so.rotvel) + so.currentRotation);
-		const img = fetchImg(so.imgURL);
-		const scale = so.scale;
-		ctx.save();
-		ctx.translate(x,y);
-		ctx.rotate(radians);
-		ctx.scale(scale,scale);
-		if(so.userid == userid){
-		    ctx.strokeStyle = "yellow";
-		    ctx.beginPath();
-		    ctx.lineWidth = 2;
-		    ctx.arc(0,0,5+ img.height/2,0,2*Math.PI);
-		    ctx.stroke();
-		}
-		ctx.drawImage(img,-img.width/2, -img.height/2);
-		ctx.restore();
-	    });
+        gameState.SpaceObjects.forEach( so => {
+            const loc = so.loc;
+            const vel = so.vel;
+            const elapsed = currentMillis - so.timestamp - millisecondAdjustment;
+            const x = loc.x + (elapsed * vel.x);
+            const y = loc.y + (elapsed * vel.y);
+            const radians = -((elapsed * so.rotvel) + so.currentRotation);
+            const img = fetchImg(so.imgURL);
+            const scale = so.scale;
+            ctx.save();
+            ctx.translate(x,y);
+            ctx.rotate(radians);
+            ctx.scale(scale,scale);
+            if(so.userid == userid){
+                ctx.strokeStyle = "yellow";
+                ctx.beginPath();
+                ctx.lineWidth = 2;
+                ctx.arc(0,0,5+ img.height/2,0,2*Math.PI);
+                ctx.stroke();
+            }
+            ctx.drawImage(img,-img.width/2, -img.height/2);
+            ctx.restore();
+        });
 
         var player = gameState.SpaceObjects.find(so => so.userid == userid);
 
-/*
-	var player = null;
-	if(gameState.SpaceObjects){
-	    sos = gameState.SpaceObjects;
-	    for(i=0; i<sos.length; i++){
-		so = sos[i];
-		if(so.userid == userid){
-		    player = so;
-		    break;
-		}
-	    }
-	}
-*/
         var msg = (gameState.SpaceObjects.filter(so => so.score)
-                    .map(`$(so.userid):$(so.score)/$(so.highscore)`)
+                    .map(so => `${so.userid}:${so.score}/${so.highScore}`)
                     .join("   "));
-/*
-	    msg = "";
-	    for(i=0; i<sos.length; i++){
-		so = sos[i];
-		if(so.score){
-		    msg = msg + (so.userid + ":" + so.score + "/" + so.highScore + "    ");
-		}
-	    }
-*/
-		ctx.fillStyle = "white";
-		ctx.font = "14px Arial";
-		ctx.fillText(msg, 10, 780);
+
+        ctx.fillStyle = "white";
+        ctx.font = "14px Arial";
+        ctx.fillText(msg, 10, 780);
 
 	if(player){
 	    ctx.fillStyle = "white";
 	    ctx.font = "14px Arial";
-	    stats = [ { label: 'Score', value : player.score },
+	    const stats = [ { label: 'Score', value : player.score },
 		      { label: 'Photons', value: player.photonCount },
 		      { label: 'Fuel',  value: player.fuel.toFixed(1) },
 		      { label: 'Shield Level', value: player.shieldLevel },
 		      { label: 'High Score', value: player.highScore }];
-
-	    for(i=0; i<stats.length; i++){
-		label = stats[i].label + ":";
-		value = "" + stats[i].value;
-		measure = ctx.measureText(label);
-		width = measure.width;
-		y = 15 * (i+1);
+            stats.forEach((stat,i) => {
+		const label = stats[i].label + ":";
+		const value = "" + stats[i].value;
+		const measure = ctx.measureText(label);
+		const width = measure.width;
+		const y = 15 * (i+1);
 		ctx.fillText(label, 120 - width, y);
 		ctx.fillText(value, 125, y);
-	    }
+	    });
 	} else {
 	    messageText = "Player Deceased";
             ctx.font = "42px Arial";
             ctx.fillStyle = "yellow";
-            width = ctx.measureText(msg).width;
+            const width = ctx.measureText(msg).width;
             ctx.fillText(msg, 700 - (width/2), 380);
 	    setTimeout(function(){ document.location=document.location; },3000);
 	}
