@@ -1,5 +1,19 @@
 
 
+function launch(){
+    var userid = prompt("Player ID");
+    if(!userid){
+	return;
+    }
+    document.body.classList.add('dark-background');
+    document.getElementById("main").style.display = 'none';
+    blasteroids({
+	userid: userid,
+	wsUri: "ws://" + document.location.hostname + ":6080/blasteroids",
+	waitReady : false,
+	canvas: document.getElementById("canvas") });
+}
+
 
 function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
     
@@ -52,7 +66,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	if(!millisecondAdjustment){
 	    millisecondAdjustment = diff;
 	} else {
-	    millisecondAdjustment = ((19 * millisecondAdjustment) + diff) / 20;
+	    millisecondAdjustment = ((4 * millisecondAdjustment) + diff) / 5;
 	}
     }
 
@@ -193,12 +207,12 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 		ctx.fillText(value, 125, y);
 	    }
 	} else {
-	    msg = "Player Deceased";
+	    messageText = "Player Deceased";
             ctx.font = "42px Arial";
             ctx.fillStyle = "yellow";
             width = ctx.measureText(msg).width;
             ctx.fillText(msg, 700 - (width/2), 380);
-	    setTimeout(function(){ document.location="/"; },3000);
+	    setTimeout(function(){ document.location=document.location; },3000);
 	}
 	
 	if(messageText) {
@@ -306,12 +320,14 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
     }
 
     document.addEventListener("keydown", function(e){
-	var commands = { Space: "fire",
-			 ArrowRight: "right",
-			 ArrowLeft: "left",
-			 ArrowUp: "forward",
-			 ArrowDown: "backward" };
-	var action = commands[e.code];
+ 	var commands = { Space		: "fire",
+			 " "		: "fire",
+			 ArrowRight	: "right",
+			 ArrowLeft	: "left",
+			 ArrowUp	: "forward",
+			 ArrowDown	: "backward" };
+	// Mac uses e.code, Win10 uses e.key
+	var action = commands[e.code || e.key];
 	if (action) {
 	    sendUserAction(action);
 	    e.preventDefault();
