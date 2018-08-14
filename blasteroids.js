@@ -115,7 +115,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	var currentMillis = (new Date()).getTime();
 	var ctx = canvas.getContext("2d");
 
-	if(!gameState){
+	if(!gameState || !gameState.SpaceObjects){
 	    return;
 	}
 
@@ -132,18 +132,16 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	    playSound(gameState.Sounds[0]);
 	}
 
-	if(gameState.SpaceObjects){
-	    sos = gameState.SpaceObjects;
-	    for(i=0; i<sos.length; i++){
-		so = sos[i];
-		loc = so.loc;
-		vel = so.vel;
-		elapsed = currentMillis - so.timestamp - millisecondAdjustment;
-		x = loc.x + (elapsed * vel.x);
-		y = loc.y + (elapsed * vel.y);
-		radians = -((elapsed * so.rotvel) + so.currentRotation);
-		img = fetchImg(so.imgURL);
-		scale = so.scale;
+	    gameState.SpaceObjects.forEach( so => {
+		const so = sos[i];
+		const loc = so.loc;
+		const vel = so.vel;
+		const elapsed = currentMillis - so.timestamp - millisecondAdjustment;
+		const x = loc.x + (elapsed * vel.x);
+		const y = loc.y + (elapsed * vel.y);
+		const radians = -((elapsed * so.rotvel) + so.currentRotation);
+		const img = fetchImg(so.imgURL);
+		const scale = so.scale;
 		ctx.save();
 		ctx.translate(x,y);
 		ctx.rotate(radians);
@@ -157,9 +155,11 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 		}
 		ctx.drawImage(img,-img.width/2, -img.height/2);
 		ctx.restore();
-	    }
-	}
+	    });
 
+        var player = gameState.SpaceObjects.find(so => so.userid == userid);
+
+/*
 	var player = null;
 	if(gameState.SpaceObjects){
 	    sos = gameState.SpaceObjects;
@@ -171,9 +171,11 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 		}
 	    }
 	}
-
-	if(gameState.SpaceObjects){
-	    sos = gameState.SpaceObjects;
+*/
+        var msg = (gameState.SpaceObjects.filter(so => so.score)
+                    .map(`$(so.userid):$(so.score)/$(so.highscore)`)
+                    .join("   "));
+/*
 	    msg = "";
 	    for(i=0; i<sos.length; i++){
 		so = sos[i];
@@ -181,12 +183,10 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 		    msg = msg + (so.userid + ":" + so.score + "/" + so.highScore + "    ");
 		}
 	    }
-	    if(msg){
+*/
 		ctx.fillStyle = "white";
 		ctx.font = "14px Arial";
 		ctx.fillText(msg, 10, 780);
-	    }
-	}
 
 	if(player){
 	    ctx.fillStyle = "white";
