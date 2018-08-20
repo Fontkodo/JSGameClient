@@ -1,12 +1,12 @@
 # JSGameClient
-This is the JavaScript web client for Blasteroids
+This is the JavaScript web client for [Blasteroids][http://blasteroids.net/]
 
 ## How It Works
 
 The client performs two main functions:
 
 1) Renders the visual interpretation of the game state
-2) Transmits user input to the server
+2) Transmits user input to the [server][https://github.com/Fontkodo/GameServer]
 
 Every time the game state is received from the server, it goes through the collection of Space Object and draws them according to their internal specifications, i.e. what image to use, current location, velocity, rotational velocity, etc.
 
