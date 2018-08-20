@@ -63,10 +63,10 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 
     function setMillisecondAdjustment(remoteMillis){
 	var diff = (new Date()).getTime() - remoteMillis;
-	if(!millisecondAdjustment){
-	    millisecondAdjustment = diff;
+	if(millisecondAdjustment){
+	    millisecondAdjustment = Math.min(diff,millisecondAdjustment)
 	} else {
-	    millisecondAdjustment = ((4 * millisecondAdjustment) + diff) / 5;
+	    millisecondAdjustment = diff;
 	}
     }
 
@@ -294,14 +294,16 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
     }
 
     document.addEventListener("keydown", function(e){
- 	var commands = { Space		: "fire",
+ 	var commands = { SPACE		: "fire",
 			 " "		: "fire",
-			 ArrowRight	: "right",
-			 ArrowLeft	: "left",
-			 ArrowUp	: "forward",
-			 ArrowDown	: "backward" };
+			 RIGHT	        : "right",
+			 LEFT	        : "left",
+			 UP	        : "forward",
+			 DOWN	        : "backward" };
 	// Mac uses e.code, Win10 uses e.key
-	var action = commands[e.code || e.key];
+
+	var normalized = ("" + (e.code || e.key)).toUpperCase().replace(/ARROW/,'');
+	var action = commands[normalized];
 	if (action) {
 	    sendUserAction(action);
 	    e.preventDefault();
@@ -310,6 +312,20 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	if(e.code == "KeyS"){
 	    soundEnabled = !soundEnabled;
 	    messageText = soundEnabled ? "Sound Enabled" : "Sound Disabled";
+	}
+
+	// This assumes that the server will soon send new player information
+	// but causes the UI to be immediate.  If this is removed, the game should
+	// work exactly the same, but with small lag.
+	if(action == "left" || action == "right"){
+            const player = gameState.SpaceObjects.find(so => so.userid == userid);
+	    const currentMillis = (new Date()).getTime();
+	    if(player && (currentMillis - lastDisplayTime) > currentMillis){
+		const degrees = (action == "left") ? 5 : -5;
+		const radians = degrees * Math.PI / 180;
+		player.currentRotation += radians;
+		display();
+	    }
 	}
     });
 
