@@ -9,14 +9,14 @@ function launch(){
     document.getElementById("main").style.display = 'none';
     blasteroids({
 	userid: userid,
-	wsUri: "ws://" + document.location.hostname + ":6080/blasteroids",
+	wsUri: `ws://${document.location.hostname}:6080/blasteroids`,
 	waitReady : false,
 	canvas: document.getElementById("canvas") });
 }
 
 
 function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
-    
+
     "use strict";
 
     var wsUri	  = config.wsUri; //"ws://10.0.0.169:6080/blasteroids";
@@ -28,7 +28,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
     var gameState		= null;
     var messageCount		= 0;
     var millisecondAdjustment	= 0;
-    var messageText             = "Up/Down Arrows for thrust, Right/Left to turn, SPACE to fire, S toggle Sound";
+    var messageText             = "Arrows or WASD for direction/thrust, SPACE to fire, M toggle muting";
     var soundEnabled            = true;
     var lastDisplayTime         = 0;
 
@@ -43,21 +43,20 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
     }
 
     function sendUserAction(action){
-	doSend('{ "userid" : "' + userid + '", "action" : "' + action + '"}');
+	doSend(`{ "userid" : "${userid}", "action" : "${action}"}`);
     }
 
     function init()
     {
 	websocket		= new WebSocket(wsUri);
-	websocket.onopen	= onOpen; 
-	websocket.onmessage	= onMessage; 
+	websocket.onopen	= onOpen;
+	websocket.onmessage	= onMessage;
 	websocket.onerror	= onError;
     }
 
     function onOpen(evt)
     {
 	sendUserAction("connect");
-	//setInterval(display,35);
 	displayTimeoutCallback();
     }
 
@@ -156,8 +155,8 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
         var player = gameState.SpaceObjects.find(so => so.userid == userid);
 
         var msg = (gameState.SpaceObjects.filter(so => so.score)
-                    .map(so => `${so.userid}:${so.score}/${so.highScore}`)
-                    .join("   "));
+                   .map(so => `${so.userid}:${so.score}/${so.highScore}`)
+                   .join("   "));
 
         ctx.fillStyle = "white";
         ctx.font = "14px Arial";
@@ -167,10 +166,10 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	    ctx.fillStyle = "white";
 	    ctx.font = "14px Arial";
 	    const stats = [ { label: 'Score', value : player.score },
-		      { label: 'Photons', value: player.photonCount },
-		      { label: 'Fuel',  value: player.fuel.toFixed(1) },
-		      { label: 'Shield Level', value: player.shieldLevel },
-		      { label: 'High Score', value: player.highScore }];
+			    { label: 'Photons', value: player.photonCount },
+			    { label: 'Fuel',  value: player.fuel.toFixed(1) },
+			    { label: 'Shield Level', value: player.shieldLevel },
+			    { label: 'High Score', value: player.highScore }];
             stats.forEach((stat,i) => {
 		const label = stats[i].label + ":";
 		const value = "" + stats[i].value;
@@ -188,7 +187,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
             ctx.fillText(msg, 700 - (width/2), 380);
 	    setTimeout(function(){ document.location=document.location; },3000);
 	}
-	
+
 	if(messageText) {
 	    ctx.fillStyle = "yellow";
 	    ctx.font = "24px Arial";
@@ -217,7 +216,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	}
 
 	while (netStringCollector.length > 0){
-	    
+
 	    var size = parseInt(netStringCollector);
 	    var requiredSize = (size + "").length + size + (":,".length);
 	    if (requiredSize > netStringCollector.length){
@@ -236,7 +235,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	    if(gameState.currentMillis){
 		setMillisecondAdjustment(gameState.currentMillis);
 	    }
-	    
+
 	    display();
 	}
     }
@@ -297,9 +296,14 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
  	var commands = { SPACE		: "fire",
 			 " "		: "fire",
 			 RIGHT	        : "right",
+			 KEYD           : "right",
 			 LEFT	        : "left",
+			 KEYA           : "left",
 			 UP	        : "forward",
-			 DOWN	        : "backward" };
+			 KEYW           : "forward",
+			 DOWN	        : "backward",
+			 KEYS           : "backward",
+		       };
 	// Mac uses e.code, Win10 uses e.key
 
 	var normalized = ("" + (e.code || e.key)).toUpperCase().replace(/ARROW/,'');
@@ -309,7 +313,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	    e.preventDefault();
 	}
 	messageText = '';
-	if(e.code == "KeyS"){
+	if(e.code == "KeyM"){
 	    soundEnabled = !soundEnabled;
 	    messageText = soundEnabled ? "Sound Enabled" : "Sound Disabled";
 	}
