@@ -1,5 +1,4 @@
 
-
 function launch(){
     var userid = prompt("Player ID");
     if(!userid){
@@ -14,23 +13,26 @@ function launch(){
 	canvas: document.getElementById("canvas") });
 }
 
-
 function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 
     "use strict";
 
-    var wsUri	  = config.wsUri; //"ws://10.0.0.169:6080/blasteroids";
-    var canvas	  = config.canvas;
-    var userid	  = config.userid; // "Fontkodo"
-    var waitReady = config.waitReady;
+    const wsUri			= config.wsUri; //"ws://10.0.0.169:6080/blasteroids";
+    const canvas		= config.canvas;
+    const userid		= config.userid; // "Fontkodo"
+    const waitReady		= config.waitReady;
 
     var websocket		= null;
     var gameState		= null;
     var messageCount		= 0;
     var millisecondAdjustment	= 0;
-    var messageText             = "Arrows or WASD for direction/thrust, SPACE to fire, M toggle muting";
-    var soundEnabled            = true;
+    var messageText             = [ "Arrows or WASD for direction/thrust",
+				    "SPACE to fire",
+				    "M toggle muting" ].join(", ");
+    var soundEnabled            = navigator.userAgent.match(/hrome|irefox/);
     var lastDisplayTime         = 0;
+    var lastExplosionTime       = 0;
+    var lastPhotonCount         = 10000000;
 
     if(!userid){
 	throw("no user id supplied");
@@ -42,7 +44,29 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	throw("bad wsUri " + wsUri);
     }
 
+    canvas.style.cursor = 'none';
+
     function sendUserAction(action){
+	if(soundEnabled){
+	    switch(action){
+	    case 'forward':
+	    case 'backward':
+		playSound('thrust.mp3');
+		break;
+	    case 'fire':
+		{
+		    const player = gameState.SpaceObjects.find(so => so.userid == userid);
+		    if(player){
+			if(player.photonCount){
+			    playSound('photon.mp3');
+			} else {
+			    playSound('out-of-ammo.mp3');
+			}
+		    }
+		}
+		break;
+	    }
+	}
 	doSend(`{ "userid" : "${userid}", "action" : "${action}"}`);
     }
 
@@ -63,7 +87,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
     function setMillisecondAdjustment(remoteMillis){
 	var diff = (new Date()).getTime() - remoteMillis;
 	if(millisecondAdjustment){
-	    millisecondAdjustment = Math.min(diff,millisecondAdjustment)
+	    millisecondAdjustment = Math.min(diff,millisecondAdjustment);
 	} else {
 	    millisecondAdjustment = diff;
 	}
@@ -84,11 +108,17 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 
     var playSound = function(){
 	var cache = {};
-	return function(name){
+	return function(name,volume){
 	    if(!soundEnabled){
 		return;
 	    }
+	    if(!volume || volume > 1){
+		volume = 1;
+	    }
 	    name = name.replace(/.wav$/,'.mp3');
+	    if (name.indexOf('/') < 0){
+		name = `http://blasteroids.net/assets/sounds/${name}`;
+	    }
 	    var sound = cache[name];
 	    if(!sound){
 		sound = new Audio(name);
@@ -96,6 +126,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	    }
 	    setTimeout(function(){
 		sound.currentTime = 0;
+		sound.volume = volume;
 		sound.play();
 	    },1);
 	};
@@ -103,7 +134,8 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 
     function displayTimeoutCallback(){
 	display();
-	setTimeout(displayTimeoutCallback,35);
+	//setTimeout(displayTimeoutCallback,35);
+	requestAnimationFrame(displayTimeoutCallback);
     }
 
     function display(){
@@ -115,19 +147,19 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	    return;
 	}
 
-	if(currentMillis - lastDisplayTime < 20){
-	    return;
-	}
 	lastDisplayTime = currentMillis;
 
 	ctx.fillStyle = "black";
 	ctx.fillRect(0,0,1400,800);
 
-	// Play only the first requested sound
-	if(gameState.Sounds && gameState.Sounds.length){
-	    playSound(gameState.Sounds[0]);
-	}
 
+	if(gameState.SpaceObjects.find(so => (so.imgURL && so.imgURL.match(/xplosion1/)))){
+	    if(currentMillis - lastExplosionTime > 200){
+		playSound('Torpedo+Explosion.mp3',0.5);
+		lastExplosionTime = currentMillis;
+	    }
+	}
+	
         gameState.SpaceObjects.forEach( so => {
             const loc = so.loc;
             const vel = so.vel;
@@ -158,27 +190,36 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
                    .map(so => `${so.userid}:${so.score}/${so.highScore}`)
                    .join("   "));
 
-        ctx.fillStyle = "white";
+        ctx.fillStyle = "cyan";
         ctx.font = "14px Arial";
         ctx.fillText(msg, 10, 780);
 
 	if(player){
-	    ctx.fillStyle = "white";
-	    ctx.font = "14px Arial";
 	    const stats = [ { label: 'Score', value : player.score },
 			    { label: 'Photons', value: player.photonCount },
 			    { label: 'Fuel',  value: player.fuel.toFixed(1) },
 			    { label: 'Shield Level', value: player.shieldLevel },
 			    { label: 'High Score', value: player.highScore }];
+
+	    ctx.font = "14px Arial";
             stats.forEach((stat,i) => {
-		const label = stats[i].label + ":";
-		const value = "" + stats[i].value;
-		const measure = ctx.measureText(label);
-		const width = measure.width;
-		const y = 15 * (i+1);
-		ctx.fillText(label, 120 - width, y);
-		ctx.fillText(value, 125, y);
+		const text = stats[i].label + "";
+		const measure = ctx.measureText(text);
+		const x = 100 * (i+5);
+		ctx.fillText(text, x - measure.width/2, 15);
 	    });
+	    ctx.font = "20px Arial";
+            stats.forEach((stat,i) => {
+		const text = parseInt(stats[i].value) + "";
+		const measure = ctx.measureText(text);
+		const x = 100 * (i+5);
+		ctx.fillText(text, x - measure.width/2, 35);
+	    });
+
+	    if(player.photonCount > lastPhotonCount){
+		playSound('success.mp3');
+	    }
+	    lastPhotonCount = player.photonCount;
 	} else {
 	    messageText = "Player Deceased";
             ctx.font = "42px Arial";
@@ -191,7 +232,7 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	if(messageText) {
 	    ctx.fillStyle = "yellow";
 	    ctx.font = "24px Arial";
-	    ctx.fillText(messageText, 700-ctx.measureText(messageText).width/2, 50);
+	    ctx.fillText(messageText, 700-ctx.measureText(messageText).width/2, 150);
 	}
 
     }
@@ -205,15 +246,6 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 	}
 
 	netStringCollector = netStringCollector + evt.data;
-
-	// If it does not match netstring, try to find beginning of next
-	// netstring.
-	if (!netStringCollector.match(/^[0-9]+:/)){
-	    console.log("unexpected input: " + netStringCollector.substr(0,30) + "...");
-	    netStringCollector = netStringCollector.replace(/^.*,([0-9]+:.*)/,'\$1');
-	    console.log("skipping");
-	    return;
-	}
 
 	while (netStringCollector.length > 0){
 
@@ -236,7 +268,6 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
 		setMillisecondAdjustment(gameState.currentMillis);
 	    }
 
-	    display();
 	}
     }
 
