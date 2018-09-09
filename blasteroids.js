@@ -324,27 +324,25 @@ function blasteroids(config){ //{ userid:, wsUri:.., canvas: ... }
     }
 
     document.addEventListener("keydown", function(e){
- 	var commands = { SPACE		: "fire",
-			 " "		: "fire",
-			 RIGHT	        : "right",
-			 KEYD           : "right",
-			 LEFT	        : "left",
-			 KEYA           : "left",
-			 UP	        : "forward",
-			 KEYW           : "forward",
-			 DOWN	        : "backward",
-			 KEYS           : "backward",
+	// checkout keycode.info
+  	var commands = { 32	: "fire",	// spacebar 
+			 39	: "right",	// right-arrow
+			 68	: "right",	// D-key
+			 37     : "left",	// left-arrow
+			 65	: "left",	// A-key 
+			 38	: "forward",	// up-arrow 
+			 87	: "forward",	// W-key 
+			 40	: "backward",	// down-arrow
+			 83	: "backward",	// S-key
 		       };
-	// Mac uses e.code, Win10 uses e.key
 
-	var normalized = ("" + (e.code || e.key)).toUpperCase().replace(/ARROW/,'');
-	var action = commands[normalized];
+	var action = commands[e.keyCode];
 	if (action) {
 	    sendUserAction(action);
 	    e.preventDefault();
 	}
 	messageText = '';
-	if(e.code == "KeyM"){
+	if(e.keyCode == 77 /* M */){
 	    soundEnabled = !soundEnabled;
 	    messageText = soundEnabled ? "Sound Enabled" : "Sound Disabled";
 	}
